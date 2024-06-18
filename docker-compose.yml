@@ -1,0 +1,13 @@
+services:
+  hospital_neo4j_etl:
+    build: 
+      context: ./hospital_neo4j_etl
+    env_file:
+      - .env
+    networks:
+      - neo4j_network
+
+networks:
+  neo4j_network:
+    name: neo4j_network
+    external: true
