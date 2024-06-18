@@ -9,11 +9,15 @@ from langchain_core.prompts import (
     ChatPromptTemplate
 )
 from langchain_core.output_parsers import StrOutputParser
+from langchain_community.vectorstores import Chroma
+from langchain_openai import OpenAIEmbeddings
+from langchain_core.runnables import RunnablePassthrough
 import os
 
 # Load environment variables from .env file
 dotenv.load_dotenv()
 
+REVIEWS_CHROMA_PATH = "chroma_data/"
 
 # Initiate chat model
 # chat_model = PaiEasChatEndpoint(
@@ -33,6 +37,10 @@ chat_model = ChatTogether(
     model='Qwen/Qwen2-72B-Instruct',
     temperature=0.1,
     max_tokens=256
+)
+
+embeddings_model = OpenAIEmbeddings(
+    model="text-embedding-3-small"
 )
 
 # Create review messages template
@@ -68,8 +76,23 @@ review_prompt_template = ChatPromptTemplate(
     messages=messages
 )
 
+# Set up vector database to retrieved
+reviews_vector_db = Chroma(
+    persist_directory=REVIEWS_CHROMA_PATH,
+    embedding_function=embeddings_model
+)
+
+# Retrieve with top 10 most similar or relevant
+reviews_retriever = reviews_vector_db.as_retriever(k=10)
+
 # Set the output parser
 output_parser = StrOutputParser()
 
 # Build chain with LCEL
-review_chain = review_prompt_template | chat_model | output_parser
+# review_chain = review_prompt_template | chat_model | output_parser
+review_chain = (
+    {'context': reviews_retriever, 'question': RunnablePassthrough()}
+    | review_prompt_template
+    | chat_model
+    | output_parser
+)
