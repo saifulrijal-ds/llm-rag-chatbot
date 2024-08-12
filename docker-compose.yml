@@ -7,6 +7,30 @@ services:
     networks:
       - neo4j_network
 
+  chatbot_api:
+    build:
+      context: ./chatbot_api
+    env_file:
+      - .env
+    depends_on:
+      - hospital_neo4j_etl
+    ports:
+      - "8000:8000"
+    networks:
+      - neo4j_network
+
+  chatbot_frontend:
+    build:
+      context: ./chatbot_frontend
+    env_file:
+      - .env
+    depends_on:
+      - chatbot_api
+    ports:
+      - "8501:8501"
+    networks:
+      - neo4j_network
+
 networks:
   neo4j_network:
     name: neo4j_network
